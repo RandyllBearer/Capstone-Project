@@ -1,5 +1,8 @@
 1. Figure out what Licensing should be on the GitHub Repository
-2. Study Yelp API
 3. Meeting with Dean Thompson
 4. Project Proposal Paper (https://github.com/laboon/Capstone_Fall2017/blob/master/deliverables/Proposal.md)
 5. The Actual Project
+  - Study the Yelp API (No matter what device we are doing this for, it will be against this API)
+  - Research on install base of devices (What would be the largest contribution)
+  - What can we reasonably do in the frame? Let's try to focus on one major feature
+  - Look at the ease/difficulty of programming for the devices available to us (Alexa, Echo, Home)
