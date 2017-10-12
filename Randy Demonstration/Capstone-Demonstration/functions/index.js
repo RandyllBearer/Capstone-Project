@@ -7,41 +7,27 @@ const yelp = require('yelp-fusion');
 
 // Dialogflow Actions
 const DIRECT_SEARCH = 'direct_search';
+const VAGUE_SEARCH = 'vague_search';
 
 // Action Parameters
 const RESTAURANT_ARGUMENT = 'restaurant';
+const TERM_ARGUMENT = 'term';
 
 exports.CapstoneDemonstration = functions.https.onRequest((request, response) => {
 	const app = new DialogflowApp({request, response});
 	
-	function directSearch(app, yelp){
-		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
-		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
-		
-		//REQUEST (Defaulting to Taco Bell in San Fransico)
-		const searchRequest = {
-			term:'Taco Bell',
-			location: 'san francisco, ca'
-		};
-		
-		/*
-		yelp.accessToken(clientId, clientSecret).then(response => {
-			const client = yelp.client(response.jsonBody.access_token);
-
-			client.search(searchRequest).then(response => {
-				const firstResult = response.jsonBody.businesses[0];
-				const prettyJson = JSON.stringify(firstResult, null, 4);
-			});
-		}).catch(e => {
-			console.log(e);
-		});
-		*/
-		
-		app.tell(clientId);
+	function vagueSearch(app){
+		app.tell('Iron Born Pizza 54 21st St Pittsburgh, PA 15222');
+	}
+	
+	//Don't forget to pass in Yelp
+	function directSearch(app){
+		app.tell('Piada 3600 Forbes Ave Pittsburgh, PA 15213');
 	}
 	
 	
   let actionMap = new Map();
   actionMap.set(DIRECT_SEARCH, directSearch);
+  actionMap.set(VAGUE_SEARCH, vagueSearch);
   app.handleRequest(actionMap);
 });

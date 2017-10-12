@@ -4,8 +4,8 @@ const yelp = require('yelp-fusion');
 
 // Place holders for Yelp Fusion's OAuth 2.0 credentials. Grab them
 // from https://www.yelp.com/developers/v3/manage_app
-const clientId = 'ER-DM3O1AVRFbTKhPYaFWQ';
-const clientSecret = 'xXGD9fkJ743fp2EqF2qiUvlXmXvA2JwjCey1GsH9DpOqoHlFi26KYjbWuu2yzZjW';
+const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
+const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
 
 //REQUEST (Defaulting to Taco Bell in San Fransico)
