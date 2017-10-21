@@ -20,8 +20,13 @@ yelp.accessToken(clientId, clientSecret).then(response => {
   client.search(searchRequest).then(response => {
     const firstResult = response.jsonBody.businesses[0];
     const prettyJson = JSON.stringify(firstResult, null, 4);
-    console.log(prettyJson);
+    console.log(firstResult.id);
   });
 }).catch(e => {
   console.log(e);
 });
+
+
+//////////////////
+
+
