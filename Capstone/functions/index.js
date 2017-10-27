@@ -20,10 +20,14 @@ var RESTAURANT_ARGUMENT = 'restaurants';
 
 exports.Capstone = functions.https.onRequest((request, response) => {
   const app = new App({request, response});
-  console.log('Request headers: ' + JSON.stringify(request.headers));
+  // console.log('Request headers: ' + JSON.stringify(request.headers));
   console.log('Request body: ' + JSON.stringify(request.body));
 
+
+  //ENTITIES SETUP
+  //First, acquire client access token
   var options = {
+
     url: 'https://api.yelp.com/oauth2/token',
     method: 'POST',
     form: {
@@ -32,25 +36,30 @@ exports.Capstone = functions.https.onRequest((request, response) => {
   		client_secret: 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a'
   	}
   };
-
   var yelp_token;
+
+  //First callback function: retrieves Yelp's official list of categories
   function callback(error, response, body) {
     if (!error && response.statusCode == 200) {
       var info = JSON.parse(body);
       yelp_token = info.access_token;
-      var auth = "Bearer "+ yelp_token;
       options = {
-        url: 'https://www.yelp.com/developers/documentation/v2/all_category_list/categories.json',
+        url: 'https://www.yelp.com/developers/documentation/v3/all_category_list/categories.json',
         method: 'GET',
         headers: {
-             'Authorization': auth,
+             'Authorization': "Bearer "+ yelp_token,
              'Content-Type': 'application/json'
            },
       };
+
+      //now that we have the categories, we must filter only restaurants
       req(options, callback2);
     }
   }
 
+
+  //Second callback function: retrieves all restaurant categories and adds them to the 'restaurants' entity
+  //Uses Dialogflow develop access token to update entities
   function callback2(error, response, body) {
     var json_form = [];
     var json_elem;
@@ -89,21 +98,22 @@ exports.Capstone = functions.https.onRequest((request, response) => {
         },
         body: JSON.stringify(json_form)
       };
-
       req(options, callback3);
     }
   }
 
+  //for debugging
   function callback3(error, response, body) {
     if (!error && response.statusCode == 200) {
       var info = JSON.parse(body);
-      console.log("AYYYYYYYYY");
       console.log(info);
     } else{
       console.error(response.statusCode);
     }
   }
 
+
+  //execute the setup for entities
   req(options, callback);
 
 	// FUNCTIONS
@@ -111,6 +121,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
     let rest = app.getArgument(RESTAURANT_ARGUMENT);
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
+
+    //for now, we have the location set to the University of Pittsburgh
+    //sort_by defaults to best match, but I feel that distance might be a more important factor
 		const searchRequest = {
       term: rest,
       categories: 'restaurants, All',
@@ -123,8 +136,8 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		  const client = yelp.client(response.jsonBody.access_token);
 
 		  client.search(searchRequest).then(response => {
+        //jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
   			var firstResult = response.jsonBody.businesses[0];
-  			console.log(firstResult);
 
   			app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?");
 		  });
