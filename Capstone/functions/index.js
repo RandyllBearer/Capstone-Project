@@ -112,38 +112,46 @@ exports.Capstone = functions.https.onRequest((request, response) => {
     }
   }
 
-
+  
   //execute the setup for entities
   req(options, callback);
 
 	// FUNCTIONS
 	function vague_search(app){
-    let rest = app.getArgument(RESTAURANT_ARGUMENT);
+		
+		//get user location
+		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
+		if(app.isPermissionGranted()){
+				const userCoordinates = app.getDeviceLocation().coordinates;
+				app.tell('found coordinates');
+		}
+		
+		let rest = app.getArgument(RESTAURANT_ARGUMENT);
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
-    //for now, we have the location set to the University of Pittsburgh
-    //sort_by defaults to best match, but I feel that distance might be a more important factor
-		const searchRequest = {
-      term: rest,
-      categories: 'restaurants, All',
-      latitude: '40.440625',
-      longitude: '-79.995886',
-      sort_by: 'distance'
-		};
+		//for now, we have the location set to the University of Pittsburgh
+		//sort_by defaults to best match, but I feel that distance might be a more important factor
+			const searchRequest = {
+		  term: rest,
+		  categories: 'restaurants, All',
+		  latitude: '40.440625',
+		  longitude: '-79.995886',
+		  sort_by: 'distance'
+			};
 
-		yelp.accessToken(clientId, clientSecret).then(response => {
-		  const client = yelp.client(response.jsonBody.access_token);
+			yelp.accessToken(clientId, clientSecret).then(response => {
+			  const client = yelp.client(response.jsonBody.access_token);
 
-		  client.search(searchRequest).then(response => {
-        //jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
-  			var firstResult = response.jsonBody.businesses[0];
+			  client.search(searchRequest).then(response => {
+			//jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
+				var firstResult = response.jsonBody.businesses[0];
 
-  			app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?");
-		  });
-		}).catch(e => {
-		  console.log(e);
-		});
+				app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?");
+			  });
+			}).catch(e => {
+			  console.log(e);
+			});
 
 
 	}
