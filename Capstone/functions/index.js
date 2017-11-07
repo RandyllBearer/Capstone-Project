@@ -17,6 +17,11 @@ const VAGUE_SEARCH = 'vague_search';
 // PARAMETERS
 var RESTAURANT_ARGUMENT = 'restaurants';
 
+//GLOBAL VARIABLES
+var COORDINATES;
+var LATITUDE = '40.440625';
+var LONGITUDE = '-79.995886';
+
 
 exports.Capstone = functions.https.onRequest((request, response) => {
   const app = new App({request, response});
@@ -112,6 +117,41 @@ exports.Capstone = functions.https.onRequest((request, response) => {
     }
   }
 
+	function actions_intent_PERMISSION(app){
+		if(app.isPermissionGranted()){
+			COORDINATES = app.getDeviceLocation().coordinates;
+			LATITUDE = COORDINATES.latitude;
+			LONGITUDE = COORDINATES.longitude;
+			console.log('FOUND COORDINATES!');	//TEST
+		 }
+		 
+		let rest = app.getArgument(RESTAURANT_ARGUMENT);
+		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
+		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
+
+		//for now, we have the location set to the University of Pittsburgh
+		//sort_by defaults to best match, but I feel that distance might be a more important factor
+		const searchRequest = {
+			term: rest,
+			categories: 'restaurants, All',
+			latitude: LATITUDE,
+			longitude: LONGITUDE,
+			sort_by: 'distance'
+		};
+		
+		yelp.accessToken(clientId, clientSecret).then(response => {
+		  const client = yelp.client(response.jsonBody.access_token);
+
+		  client.search(searchRequest).then(response => {
+		//jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
+			var firstResult = response.jsonBody.businesses[0];
+
+			app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?");
+		  });
+		}).catch(e => {
+		  console.log(e);
+		});
+	}
   
   //execute the setup for entities
   req(options, callback);
@@ -121,10 +161,6 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		
 		//get user location
 		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
-		if(app.isPermissionGranted()){
-				const userCoordinates = app.getDeviceLocation().coordinates;
-				app.tell('found coordinates');
-		}
 		
 		let rest = app.getArgument(RESTAURANT_ARGUMENT);
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
@@ -139,7 +175,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		  longitude: '-79.995886',
 		  sort_by: 'distance'
 			};
-
+		
+		
+		
 			yelp.accessToken(clientId, clientSecret).then(response => {
 			  const client = yelp.client(response.jsonBody.access_token);
 
@@ -159,5 +197,6 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	// ACTION MAP
 	let actionMap = new Map();
 	actionMap.set(VAGUE_SEARCH, vague_search);
+	actionMap.set('actions_intent_PERMISSION', actions_intent_PERMISSION);
 	app.handleRequest(actionMap);
 });
