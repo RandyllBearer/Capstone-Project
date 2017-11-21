@@ -4,6 +4,7 @@ const App = require('actions-on-google').DialogflowApp;
 const functions = require('firebase-functions');
 const yelp = require('yelp-fusion');
 const req = require('request');
+
 //GLOBALS
 global.access_token = 'hi';
 
@@ -14,10 +15,11 @@ const VAGUE_SEARCH = 'vague_search';
 var RESTAURANT_ARGUMENT = 'restaurants';
 
 //GLOBAL VARIABLES
-var COORDINATES;
+var COORDINATES = null;
 var LATITUDE = 'null';
 var LONGITUDE = 'null';
 var RESTAURANT = 'null';
+var I = 0;
 var flagVagueSearch = false;
 
 //Business Logic
@@ -118,10 +120,11 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	req(options, callback);
 	
 
-	// FUNCTIONS
+	//FUNCTIONS
 	function vague_search(app){
 		RESTAURANT = app.getArgument(RESTAURANT_ARGUMENT);
 		flagVagueSearch = true;
+		I = 0;
 		
 		//get user location
 		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
@@ -142,6 +145,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		 }
 	}
 	
+	//Implements the actual logic from vague_search
 	function vague_search_logic(app){
 		rest = RESTAURANT_ARGUMENT;
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
@@ -152,9 +156,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		
 		console.log('latitude: ' + LATITUDE + ' longitude: ' + LONGITUDE + ' restaurant: ' + RESTAURANT);	//TEST
 		
+		//NEED TO FINE TUNE THIS SEARCH FEATURE
 		const searchRequest = {
 			term: rest,
-			categories: 'restaurants, All',
+			categories: rest,
 			latitude: app.getDeviceLocation().coordinates.latitude,
 			longitude: app.getDeviceLocation().coordinates.longitude,
 			sort_by: 'distance'
@@ -164,10 +169,13 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		  const client = yelp.client(response.jsonBody.access_token);
 
 		  client.search(searchRequest).then(response => {
-		//jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
+			//jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
 			var firstResult = response.jsonBody.businesses[0];
+			var secondResult = response.jsonBody.businesses[1];
 
-			app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?");
+			//NEED TO CYCLE THROUGH OTHER RESULTS
+			//app.ask(is this good?)
+			app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?" + secondResult.name);
 		  });
 		}).catch(e => {
 		  console.log(e);
