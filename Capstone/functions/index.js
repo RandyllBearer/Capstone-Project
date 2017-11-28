@@ -1,3 +1,11 @@
+//Things to work on
+//allow for users to break out of vague/random search loops
+//handle negative permissions
+//handle negative confirmations
+//allow for last statement to be repeated
+//have the display of restaurants include the categories of food
+//cut down on API calls in loops
+
 // REQUIREMENTS
 process.env.DEBUG = 'actions-on-google:*';
 const App = require('actions-on-google').DialogflowApp;
@@ -11,11 +19,12 @@ global.access_token = 'hi';
 // ACTIONS
 const VAGUE_SEARCH = 'vague_search';
 const DIRECT_SEARCH = 'direct_search';
-
+const RANDOM_SEARCH = 'random_search';
 
 // PARAMETERS
-var RESTAURANT_ARGUMENT = 'restaurants';
+var RESTAURANT_ARGUMENT = 'null';
 var TERM_ARGUMENT = 'terms';
+
 //GLOBAL VARIABLES
 var COORDINATES = null;
 var LATITUDE = 'null';
@@ -23,8 +32,15 @@ var LONGITUDE = 'null';
 var RESTAURANT = 'null';
 var TERM = 'null';
 var I = 0;
+
+//HANDLER FLAGS
 var flagVagueSearch = false;
 var flagDirectSearch = false;
+var flagRandomSearch = false;
+
+//RANDOM SEARCH
+var randomSearchAlreadyCalledAPI = false;	//not yet used
+var selectedBusiness = null;
 
 //Business Logic
 exports.Capstone = functions.https.onRequest((request, response) => {
@@ -122,9 +138,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	req(options, callback);
 
 
-	//FUNCTIONS
+	//------------------- INTENT FUNCTIONS --------------------
 	function vague_search(app){
 		RESTAURANT = app.getArgument(RESTAURANT_ARGUMENT);
+		console.log("\n\nRESTAURANT = " + RESTAURANT);
 		flagVagueSearch = true;
 		I = 0;
 
@@ -142,6 +159,17 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
 	}
 
+	function random_search(app){
+		console.log("DDDDDDDDDDDDDDD Initiating random_search");
+		flagRandomSearch = true;
+		I = 0;
+		
+		//get user location
+		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
+	}
+	
+	//------------------ HANDLERS --------------------
+	
 	//is called whenever we are asking for permission
 	function actions_intent_PERMISSION(app){
 		if(app.isPermissionGranted()){
@@ -159,43 +187,86 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 				flagDirectSearch = false;
 				direct_search_logic(app);
 			}
+			
+			if(flagRandomSearch == true){
+				flagRandomSearch = false;
+				random_search_logic(app);
+			}
+			
 		 }
 	}
+	
+	//is called whenever we are asking for permissions
+	function actions_intent_CONFIRMATION(app){
+		if(app.getUserConfirmation() == true){
+			
+			if(flagVagueSearch == true){
+				flagVagueSearch = false;
+				display_business(app);
+			}
+			
+			//if user likes random suggested, display more information
+			if(flagRandomSearch == true ){
+				flagRandomSearch = false;
+				display_business(app);
+			}
+			
+			
+		}else{
+			
+			if(flagVagueSearch == true){
+				flagVagueSearch = false;
+				vague_search_logic(app);
+			}
+			
+			//if user doesn't like random suggested, random suggest another
+			if(flagRandomSearch == true ){
+				flagRandomSearch = false;
+				random_search_logic(app);
+			}
+			
+		}
+	}
+	
+	//----------------------- LOGIC --------------------------
 
 	//Implements the actual logic from vague_search
 	function vague_search_logic(app){
-		rest = RESTAURANT_ARGUMENT;
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
 		//for now, we have the location set to the University of Pittsburgh
 		//sort_by defaults to best match, but I feel that distance might be a more important factor
-
-		console.log('latitude: ' + LATITUDE + ' longitude: ' + LONGITUDE + ' restaurant: ' + RESTAURANT);	//TEST
-
 		//NEED TO FINE TUNE THIS SEARCH FEATURE
 		const searchRequest = {
-			term: rest,
-			categories: rest,
-			latitude: app.getDeviceLocation().coordinates.latitude,
-			longitude: app.getDeviceLocation().coordinates.longitude,
+			term: RESTAURANT,
+			//categories: RESTAURANT,
+			latitude: LATITUDE,
+			longitude: LONGITUDE,
+			limit: 50,
 			sort_by: 'distance'
 		};
 
 		yelp.accessToken(clientId, clientSecret).then(response => {
 		  const client = yelp.client(response.jsonBody.access_token);
 
-		  client.search(searchRequest).then(response => {
-			//jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
-			var firstResult = response.jsonBody.businesses[0];
-			var secondResult = response.jsonBody.businesses[1];
+			client.search(searchRequest).then(response => {
+				
+				//jsonBody returned the top results (based on sort_by, defaulted to at most 20 results)
+				selectedBusiness = response.jsonBody.businesses[I];
 
-			//NEED TO CYCLE THROUGH OTHER RESULTS
-			//app.ask(is this good?)
-			app.tell("I found some " + rest + " places near you. How does " + firstResult.name + " sound?" + secondResult.name);
-		  });
+				//ask if this was a good choice
+				flagVagueSearch = true;
+				if(I < 49){
+					I = I + 1;
+				}else{
+					app.tell("Sorry, but there are no other options available");
+				}
+				app.askForConfirmation("Does " + selectedBusiness.name + " at " + selectedBusiness.location.address1 + " sound good?");
+			
+			});	
 		}).catch(e => {
-		  console.log(e);
+			console.log(e);
 		});
 	}
 
@@ -214,8 +285,8 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		const searchRequest = {
 			term: TERM,
 			categories: "restaurants",
-			latitude: app.getDeviceLocation().coordinates.latitude,
-			longitude: app.getDeviceLocation().coordinates.longitude,
+			latitude: LATITUDE,
+			longitude: LONGITUDE,
 			sort_by: 'distance'
 		};
 
@@ -231,17 +302,66 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 
 			//NEED TO CYCLE THROUGH OTHER RESULTS
 			//app.ask(is this good?)
-			app.tell("I found a "+ firstResult.name + "at " + firstResult.location.address1);
+			flagDirectSearch = true;
+			selectedBusiness = firstResult;
+			display_business(app);
 		  });
 		}).catch(e => {
 		  console.log(e);
 		});
+		
+	}
+	
+	function random_search_logic(app){
+		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
+		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
+		
+		const searchRequest = {
+			term: 'restaurants',
+			latitude: LATITUDE,
+			longitude: LONGITUDE,
+			limit: 50,
+			sort_by: 'best_match'
+		};
+		
+		//contact api
+		yelp.accessToken(clientId, clientSecret).then(response => {
+		  const client = yelp.client(response.jsonBody.access_token);
+
+			client.search(searchRequest).then(response => {
+				//jsonBody returned the best_match 'restaurants' 50 locations
+				//get a random index to sort results
+				var randomInt = Math.floor(Math.random() * 49);
+					
+				//choose a resultant business
+				selectedBusiness = response.jsonBody.businesses[randomInt];
+					
+				//ask if this was a good choice
+				flagRandomSearch = true;
+				app.askForConfirmation("Does " + selectedBusiness.name + " at " + selectedBusiness.location.address1 + " sound good?");
+				
+			});
+		}).catch(e => {
+		  console.log(e);
+		});
+	}
+	
+	//printout selectedBusiness details
+	function display_business(app){
+		let sentence1 = "Okay, describing " + selectedBusiness.name + " now.\n";
+		let sentence2 = selectedBusiness.name + " located at " + selectedBusiness.location.address1 + " " + selectedBusiness.location.city + " " + selectedBusiness.location.zip_code + "\n";
+		let sentence3 = "Price is " + selectedBusiness.price + " Average Rating is " + selectedBusiness.rating + "\n";
+		let sentence4 = "Phone number is " + selectedBusiness.display_phone + "\n";
+		app.tell(sentence1 + sentence2 + sentence3 + sentence4 );
+		
 	}
 
 	// ACTION MAP
 	let actionMap = new Map();
 	actionMap.set(VAGUE_SEARCH, vague_search);
 	actionMap.set(DIRECT_SEARCH, direct_search);
+	actionMap.set(RANDOM_SEARCH, random_search);
 	actionMap.set('actions_intent_PERMISSION', actions_intent_PERMISSION);
+	actionMap.set('actions_intent_CONFIRMATION', actions_intent_CONFIRMATION);
 	app.handleRequest(actionMap);
 });
