@@ -67,7 +67,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	};
 	var yelp_token;
 
-  //First callback function: retrieves Yelp's official list of categories
+  /* 
+  First callback function: This function retrieves Yelp's official list of categories from the Yelp API
+  */
   function callback(error, response, body) {
 		if (!error && response.statusCode == 200) {
 		  var info = JSON.parse(body);
@@ -86,8 +88,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		}
   }
 
-  //Second callback function: retrieves all restaurant categories and adds them to the 'restaurants' entity
-  //Uses Dialogflow develop access token to update entities
+  /*
+  Second callback function: retrieves all restaurant categories and adds them to the 'restaurants' entity. This function also
+  uses Dialogflow develop access token to update entities
+  */
   function callback2(error, response, body) {
 		var json_form = [];
 		var json_elem;
@@ -130,7 +134,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		}
   }
 
-	//for debugging
+	/*
+	Third callback function: This function is used for debugging.
+	*/
 	function callback3(error, response, body) {
 		if (!error && response.statusCode == 200) {
 			var info = JSON.parse(body);
@@ -145,6 +151,11 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 
 
 	//------------------- INTENT FUNCTIONS --------------------
+	
+	/*
+	Vague Search: The main function for the vague search implementation. This function sets up the preliminaries, as well as flagging the search type
+	as a vague search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
+	*/
 	function vague_search(app){
 		RESTAURANT = app.getArgument(RESTAURANT_ARGUMENT);
 		console.log("\n\nRESTAURANT = " + RESTAURANT);
@@ -155,6 +166,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
 	}
 
+	/*
+	Direct Search: The main function for the direct search implementation This function sets up the preliminaries, as well as flagging the search type
+	as a direct search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
+	*/
 	function direct_search(app){
 		TERM = app.getArgument(TERM_ARGUMENT);
 		console.log("DDDDDDDDDDDDDD" + TERM);
@@ -165,6 +180,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		app.askForPermission('To locate you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
 	}
 
+	/*
+	Random Search: The main function for the randon search implementation This function sets up the preliminaries, as well as flagging the search type
+	as a random search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
+	*/
 	function random_search(app){
 		console.log("DDDDDDDDDDDDDDD Initiating random_search");
 		flagRandomSearch = true;
@@ -176,7 +195,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	
 	//------------------ HANDLERS --------------------
 	
-	//is called whenever we are asking for permission
+	/*
+	Actions Intent Permission: This function is called whenever we are asking for permission for location. If permission is not granted, the search
+	will not continue.
+	*/
 	function actions_intent_PERMISSION(app){
 		if(app.isPermissionGranted()){
 			COORDINATES = app.getDeviceLocation().coordinates;
@@ -202,7 +224,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		 }
 	}
 	
-	//is called whenever we are asking for permissions
+	/*
+	Actions Intent Confirmation: This function is called whenever we are asking for permissions
+	*/
 	function actions_intent_CONFIRMATION(app){
 		if(app.getUserConfirmation() == true){
 			
@@ -236,7 +260,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	
 	//----------------------- LOGIC --------------------------
 
-	//Implements the actual logic from vague_search
+	/*
+	Vague Search Logic: Implements the actual logic for vague_search.
+	*/
 	function vague_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
@@ -276,7 +302,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		});
 	}
 
-	//Implements the actual logic from vague_search
+	/*
+	Direct Search Logic: Implements the actual logic for direct_search
+	*/
 	function direct_search_logic(app){
 		// var currentTerm = app.getArgument(TERM_ARGUMENT);
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
@@ -318,6 +346,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		
 	}
 	
+	/*
+	Random Search Logic: Implements the actual logic for random_search
+	*/
 	function random_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
@@ -459,3 +490,4 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	app.handleRequest(actionMap);
 	
 });
+
