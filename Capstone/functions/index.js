@@ -1,10 +1,5 @@
-//Things to work on
-//allow for users to break out of vague/random search loops
-//handle negative permissions
-//handle negative confirmations
-//allow for last statement to be repeated
-//have the display of restaurants include the categories of food
-//cut down on API calls in loops
+//things we could improve
+//search through more than top 50 results
 
 // REQUIREMENTS
 process.env.DEBUG = 'actions-on-google:*';
@@ -28,7 +23,7 @@ const REPEAT_RATING = "repeat_rating";
 const REPEAT_PHONE = "repeat_phone";
 
 // PARAMETERS
-var RESTAURANT_ARGUMENT = 'null';
+var RESTAURANT_ARGUMENT = 'restaurants';
 var TERM_ARGUMENT = 'terms';
 
 //GLOBAL VARIABLES
@@ -51,9 +46,7 @@ var selectedBusiness = null;
 //Business Logic
 exports.Capstone = functions.https.onRequest((request, response) => {
 	const app = new App({request, response});
-	// console.log('Request body: ' + JSON.stringify(request.body));
-	// console.log("EEEEEEEEEE: " + app.getDeviceLocation().coordinates.latitude);
-	//ENTITIES SETUP
+
 	//First, acquire client access token
 	var options = {
 
@@ -145,9 +138,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 			console.error(response.statusCode);
 		}
 	}
-
-	//execute the setup for entities
-	req(options, callback);
+	
+	//IMPORTANT
+	//execute the setup for entities, restores MOST NOT ALL categories.
+	//req(options, callback); //Only need to run this if the intents are reset in Dialogflow, 
 
 
 	//------------------- INTENT FUNCTIONS --------------------
@@ -172,7 +166,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	*/
 	function direct_search(app){
 		TERM = app.getArgument(TERM_ARGUMENT);
-		console.log("DDDDDDDDDDDDDD" + TERM);
+		console.log("TERM = " + TERM);
 		flagDirectSearch = true;
 		I = 0;
 
@@ -185,7 +179,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	as a random search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
 	*/
 	function random_search(app){
-		console.log("DDDDDDDDDDDDDDD Initiating random_search");
+		console.log("Random Search = Initiating random_search");
 		flagRandomSearch = true;
 		I = 0;
 		
@@ -221,6 +215,8 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 				random_search_logic(app);
 			}
 			
+		 }else{
+			 app.tell("Sorry, but Yelp cannot provide results without access to your location, now quitting program...");
 		 }
 	}
 	
@@ -240,8 +236,6 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 				flagRandomSearch = false;
 				display_business(app);
 			}
-			
-			
 		}else{
 			
 			if(flagVagueSearch == true){
@@ -267,16 +261,16 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
-		//for now, we have the location set to the University of Pittsburgh
-		//sort_by defaults to best match, but I feel that distance might be a more important factor
-		//NEED TO FINE TUNE THIS SEARCH FEATURE
+		//debugger
+		console.log("Restaurant = " + RESTAURANT + " in vague search");
+		
 		const searchRequest = {
 			term: RESTAURANT,
-			//categories: RESTAURANT,
+			categories: RESTAURANT,
 			latitude: LATITUDE,
 			longitude: LONGITUDE,
 			limit: 50,
-			sort_by: 'distance'
+			sort_by: 'best_match'
 		};
 
 		yelp.accessToken(clientId, clientSecret).then(response => {
@@ -306,22 +300,17 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	Direct Search Logic: Implements the actual logic for direct_search
 	*/
 	function direct_search_logic(app){
-		// var currentTerm = app.getArgument(TERM_ARGUMENT);
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
-		//for now, we have the location set to the University of Pittsburgh
-		//sort_by defaults to best match, but I feel that distance might be a more important factor
+		console.log("Term = " + TERM + " in direct_search");	//TEST
 
-		console.log(TERM);	//TEST
-
-		//NEED TO FINE TUNE THIS SEARCH FEATURE
 		const searchRequest = {
 			term: TERM,
-			categories: "restaurants",
 			latitude: LATITUDE,
 			longitude: LONGITUDE,
-			sort_by: 'distance'
+			limit: 50,
+			sort_by: 'best_match'
 		};
 
 		yelp.accessToken(clientId, clientSecret).then(response => {
@@ -333,8 +322,6 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 			var secondResult = response.jsonBody.businesses[1];
 			const VAGUE_SEARCH = 'vague_search';
 
-
-			//NEED TO CYCLE THROUGH OTHER RESULTS
 			//app.ask(is this good?)
 			flagDirectSearch = true;
 			selectedBusiness = firstResult;
@@ -398,7 +385,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		
 		let sentence1 = "Okay, describing " + selectedBusiness.name + " now.\n";
 		let sentence2 = selectedBusiness.name + " located at " + selectedBusiness.location.address1 + " " + selectedBusiness.location.city + "\n";
-		let sentence3 = "Price is " + selectedBusiness.price + " Average Rating is " + selectedBusiness.rating + "\n";
+		let sentence3 = "Price is " + price + " Average Rating is " + selectedBusiness.rating + "\n";
 		let sentence4 = "Phone number is " + selectedBusiness.display_phone + "\n";
 		
 		app.ask(sentence1 + sentence2 + sentence3 + sentence4 + ", would you like anything repeated?");
@@ -471,8 +458,6 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		}
 		
 	}
-	
-	//repeat address of selectedBusiness
 
 	// ACTION MAP
 	let actionMap = new Map();
