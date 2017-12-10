@@ -20,6 +20,12 @@ global.access_token = 'hi';
 const VAGUE_SEARCH = 'vague_search';
 const DIRECT_SEARCH = 'direct_search';
 const RANDOM_SEARCH = 'random_search';
+const REPEAT_PRICE = "repeat_price";
+const REPEAT_ADDRESS = "repeat_address";
+const REPEAT_NAME = "repeat_name";
+const REPEAT_CITY = "repeat_city";
+const REPEAT_RATING = "repeat_rating";
+const REPEAT_PHONE = "repeat_phone";
 
 // PARAMETERS
 var RESTAURANT_ARGUMENT = 'null';
@@ -348,20 +354,108 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	
 	//printout selectedBusiness details
 	function display_business(app){
+		price = selectedBusiness.price;
+		if(price.length == 1){
+			price = "cheap";
+		}else if(price.length == 2){
+			price = "moderately cheap";
+		}else if(price.length == 3){
+			price = "moderately expensive";
+		}else{
+			price = "expensive";
+		}
+		
 		let sentence1 = "Okay, describing " + selectedBusiness.name + " now.\n";
-		let sentence2 = selectedBusiness.name + " located at " + selectedBusiness.location.address1 + " " + selectedBusiness.location.city + " " + selectedBusiness.location.zip_code + "\n";
+		let sentence2 = selectedBusiness.name + " located at " + selectedBusiness.location.address1 + " " + selectedBusiness.location.city + "\n";
 		let sentence3 = "Price is " + selectedBusiness.price + " Average Rating is " + selectedBusiness.rating + "\n";
 		let sentence4 = "Phone number is " + selectedBusiness.display_phone + "\n";
-		app.tell(sentence1 + sentence2 + sentence3 + sentence4 );
+		
+		app.ask(sentence1 + sentence2 + sentence3 + sentence4 + ", would you like anything repeated?");
 		
 	}
+	
+	//-------- repeats -----------
+	
+	//repeat price of selectedBusiness
+	function repeat_price(app){
+		if(selectedBusiness == null){
+			app.ask("Please search for a business before asking for details.");
+		}else{
+			var price = selectedBusiness.price;
+			if(price.length == 1){
+				price = "cheap";
+			}else if(price.length == 2){
+				price = "moderately cheap";
+			}else if(price.length == 3){
+				price = "moderately expensive";
+			}else{
+				price = "expensive";
+			}
+			app.ask("Average price of " + selectedBusiness.name + " is " + price );
+		}
+		
+	}
+	
+	function repeat_address(app){
+		if(selectedBusiness == null){
+			app.ask("Please search for a business before asking for details.");
+		}else{
+			app.ask("Address of " + selectedBusiness.name + " is " + selectedBusiness.location.address1 );	
+		}
+		
+	}
+	
+	function repeat_name(app){
+		if(selectedBusiness == null){
+			app.ask("Please search for a business before asking for details.");
+		}else{
+			app.ask("Name of business is " + selectedBusiness.name );
+		}
+	
+	}
+	
+	function repeat_city(app){
+		if(selectedBusiness == null){
+			app.ask("Please search for a business before asking for details.");
+		}else{
+			app.ask(selectedBusiness.name + " is located in " + selectedBusiness.city );
+		}
+		
+	}
+	
+	function repeat_rating(app){
+		if(selectedBusiness == null){
+			app.ask("Please search for a business before asking for details.");
+		}else{
+			app.ask("Average rating of " + selectedBusiness.name + " is " + selectedBusiness.rating );
+		}
+		
+	}
+	
+	function repeat_phone(app){
+		if(selectedBusiness == null){
+			app.ask("Please search for a business before asking for details.");
+		}else{
+			app.ask("Phone number of " + selectedBusiness.name + " is " + selectedBusiness.display_phone );
+		}
+		
+	}
+	
+	//repeat address of selectedBusiness
 
 	// ACTION MAP
 	let actionMap = new Map();
 	actionMap.set(VAGUE_SEARCH, vague_search);
 	actionMap.set(DIRECT_SEARCH, direct_search);
 	actionMap.set(RANDOM_SEARCH, random_search);
+	actionMap.set(REPEAT_PRICE, repeat_price);
+	actionMap.set(REPEAT_ADDRESS, repeat_address);
+	actionMap.set(REPEAT_NAME, repeat_name);
+	actionMap.set(REPEAT_CITY, repeat_city);
+	actionMap.set(REPEAT_RATING, repeat_rating);
+	actionMap.set(REPEAT_PHONE, repeat_phone);
 	actionMap.set('actions_intent_PERMISSION', actions_intent_PERMISSION);
 	actionMap.set('actions_intent_CONFIRMATION', actions_intent_CONFIRMATION);
 	app.handleRequest(actionMap);
+	
 });
