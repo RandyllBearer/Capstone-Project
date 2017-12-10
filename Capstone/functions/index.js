@@ -59,11 +59,13 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		}
 	};
 	var yelp_token;
+	
+	//----------------- CALLBACKS -------------------------
 
-  /* 
-  First callback function: This function retrieves Yelp's official list of categories from the Yelp API
-  */
-  function callback(error, response, body) {
+	/* 
+	* First callback function: This function retrieves Yelp's official list of categories from the Yelp API
+	*/
+	function callback(error, response, body) {
 		if (!error && response.statusCode == 200) {
 		  var info = JSON.parse(body);
 		  yelp_token = info.access_token;
@@ -79,18 +81,18 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		  //now that we have the categories, we must filter only restaurants
 		  req(options, callback2);
 		}
-  }
+	}
 
-  /*
-  Second callback function: retrieves all restaurant categories and adds them to the 'restaurants' entity. This function also
-  uses Dialogflow develop access token to update entities
-  */
-  function callback2(error, response, body) {
+	/*
+	* Second callback function: retrieves all restaurant categories and adds them to the 'restaurants' entity. 
+	* This function also uses Dialogflow develop access token to update entities
+	*/
+	function callback2(error, response, body) {
 		var json_form = [];
 		var json_elem;
 		if (!error && response.statusCode == 200) {
 			var info = JSON.parse(body);
-			// console.log("HELLO");
+		
 		  json_elem = {
 				"entries": [],
 				"name": "restaurants"
@@ -125,10 +127,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		  };
 		  req(options, callback3);
 		}
-  }
+	}
 
 	/*
-	Third callback function: This function is used for debugging.
+	* Third callback function: This function is used for debugging.
 	*/
 	function callback3(error, response, body) {
 		if (!error && response.statusCode == 200) {
@@ -147,8 +149,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	//------------------- INTENT FUNCTIONS --------------------
 	
 	/*
-	Vague Search: The main function for the vague search implementation. This function sets up the preliminaries, as well as flagging the search type
-	as a vague search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
+	* Vague Search: The main function for the vague search implementation. This function sets up the preliminaries, 
+	* as well as flagging the search type
+	* as a vague search. Then, it sends the program to the permission function to make sure the user wants to continue 
+	* with the search.
 	*/
 	function vague_search(app){
 		RESTAURANT = app.getArgument(RESTAURANT_ARGUMENT);
@@ -161,8 +165,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 
 	/*
-	Direct Search: The main function for the direct search implementation This function sets up the preliminaries, as well as flagging the search type
-	as a direct search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
+	* Direct Search: The main function for the direct search implementation This function sets up the preliminaries, 
+	* as well as flagging the search type
+	* as a direct search. Then, it sends the program to the permission function to make sure the user wants to 
+	* continue with the search.
 	*/
 	function direct_search(app){
 		TERM = app.getArgument(TERM_ARGUMENT);
@@ -175,8 +181,10 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 
 	/*
-	Random Search: The main function for the randon search implementation This function sets up the preliminaries, as well as flagging the search type
-	as a random search. Then, it sends the program to the permission function to make sure the user wants to continue with the search.
+	* Random Search: The main function for the randon search implementation This function sets up the preliminaries, 
+	* as well as flagging the search type
+	* as a random search. Then, it sends the program to the permission function to make sure the user wants 
+	* to continue with the search.
 	*/
 	function random_search(app){
 		console.log("Random Search = Initiating random_search");
@@ -190,8 +198,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	//------------------ HANDLERS --------------------
 	
 	/*
-	Actions Intent Permission: This function is called whenever we are asking for permission for location. If permission is not granted, the search
-	will not continue.
+	* Actions Intent Permission: This function is called whenever we are asking for permission for location. 
+	* If permission is not granted, the search will not continue.
+	* Flag variables tell us which function last asked for permission, so we know which function to return to.
 	*/
 	function actions_intent_PERMISSION(app){
 		if(app.isPermissionGranted()){
@@ -221,7 +230,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 	
 	/*
-	Actions Intent Confirmation: This function is called whenever we are asking for permissions
+	* Actions Intent Confirmation: This function is called whenever we are asking a yes/no question.
+	* flag variables tell us which function last asked for permission so we know which function to
+	* return to once we get the user's yes/no answer.
 	*/
 	function actions_intent_CONFIRMATION(app){
 		if(app.getUserConfirmation() == true){
@@ -255,15 +266,15 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	//----------------------- LOGIC --------------------------
 
 	/*
-	Vague Search Logic: Implements the actual logic for vague_search.
+	* Vague Search Logic: Implements the actual logic for vague_search.
 	*/
 	function vague_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
-		//debugger
-		console.log("Restaurant = " + RESTAURANT + " in vague search");
+		console.log("Restaurant = " + RESTAURANT + " in vague search");	//debug console code
 		
+		//Search Request we will send to Fusion API
 		const searchRequest = {
 			term: RESTAURANT,
 			categories: RESTAURANT,
@@ -297,14 +308,15 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 
 	/*
-	Direct Search Logic: Implements the actual logic for direct_search
+	* Direct Search Logic: Implements the actual logic for direct_search
 	*/
 	function direct_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 
-		console.log("Term = " + TERM + " in direct_search");	//TEST
+		console.log("Term = " + TERM + " in direct_search");	//Debugging Code
 
+		//Search Request we will be sending to Fusion API
 		const searchRequest = {
 			term: TERM,
 			latitude: LATITUDE,
@@ -334,12 +346,13 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 	
 	/*
-	Random Search Logic: Implements the actual logic for random_search
+	* Random Search Logic: Implements the actual logic for random_search
 	*/
 	function random_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
 		const clientSecret = 'MoWJYPz4DuNtJSGcAyYLQJYe1A9k8z2lISjx3LTcTjJteBisuaQjCb8uFowh2s6a';
 		
+		//The Search Request we will be sending to the API
 		const searchRequest = {
 			term: 'restaurants',
 			latitude: LATITUDE,
@@ -348,7 +361,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 			sort_by: 'best_match'
 		};
 		
-		//contact api
+		//Send Request to the Fusion API
 		yelp.accessToken(clientId, clientSecret).then(response => {
 		  const client = yelp.client(response.jsonBody.access_token);
 
@@ -370,7 +383,9 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		});
 	}
 	
-	//printout selectedBusiness details
+	/*
+	* Prints out an assortment of details about the selectedBusiness
+	*/
 	function display_business(app){
 		price = selectedBusiness.price;
 		if(price.length == 1){
@@ -392,12 +407,16 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 		
 	}
 	
-	//-------- repeats -----------
+	//-------- REPEATS -----------
 	
-	//repeat price of selectedBusiness
+	/*
+	* repeats price of selectedBusiness back to user
+	* $ = cheap, $$ = moderately cheap, $$$ = moderately expensive, $$$$ = expensive
+	*/
 	function repeat_price(app){
 		if(selectedBusiness == null){
 			app.ask("Please search for a business before asking for details.");
+		
 		}else{
 			var price = selectedBusiness.price;
 			if(price.length == 1){
@@ -410,56 +429,83 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 				price = "expensive";
 			}
 			app.ask("Average price of " + selectedBusiness.name + " is " + price );
+		
 		}
 		
 	}
 	
+	/*
+	* Repeats street address of selectedBusiness back to user
+	*/
 	function repeat_address(app){
 		if(selectedBusiness == null){
 			app.ask("Please search for a business before asking for details.");
+		
 		}else{
 			app.ask("Address of " + selectedBusiness.name + " is " + selectedBusiness.location.address1 );	
+		
 		}
 		
 	}
 	
+	/*
+	* Repeats name of selectedBusiness back to user
+	*/
 	function repeat_name(app){
 		if(selectedBusiness == null){
 			app.ask("Please search for a business before asking for details.");
+		
 		}else{
 			app.ask("Name of business is " + selectedBusiness.name );
+		
 		}
 	
 	}
 	
+	/*
+	* Repeats city/town of selectedBusiness back to user
+	*/
 	function repeat_city(app){
 		if(selectedBusiness == null){
 			app.ask("Please search for a business before asking for details.");
+		
 		}else{
 			app.ask(selectedBusiness.name + " is located in " + selectedBusiness.city );
+		
 		}
 		
 	}
 	
+	/*
+	* Repeats average rating of selectedBusiness back to user [0-5.0]
+	*/
 	function repeat_rating(app){
 		if(selectedBusiness == null){
 			app.ask("Please search for a business before asking for details.");
+		
 		}else{
 			app.ask("Average rating of " + selectedBusiness.name + " is " + selectedBusiness.rating );
+		
 		}
 		
 	}
 	
+	/*
+	* Repeats phone number of selectedBusiness back to user
+	*/
 	function repeat_phone(app){
 		if(selectedBusiness == null){
 			app.ask("Please search for a business before asking for details.");
+		
 		}else{
 			app.ask("Phone number of " + selectedBusiness.name + " is " + selectedBusiness.display_phone );
+		
 		}
 		
 	}
 
 	// ACTION MAP
+	// maps names of intent actions from Dialogflow to function names in this fulfillment
 	let actionMap = new Map();
 	actionMap.set(VAGUE_SEARCH, vague_search);
 	actionMap.set(DIRECT_SEARCH, direct_search);
@@ -474,5 +520,6 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	actionMap.set('actions_intent_CONFIRMATION', actions_intent_CONFIRMATION);
 	app.handleRequest(actionMap);
 	
+//End of File
 });
 
