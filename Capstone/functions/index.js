@@ -8,10 +8,11 @@ const functions = require('firebase-functions');
 const yelp = require('yelp-fusion');
 const req = require('request');
 
-//GLOBALS
-global.access_token = 'hi';
+// GLOBALS
+global.access_token = 'hi';		//Stores the access token to the Fusion API.
+var selectedBusiness = null;	//Stores the business object returned by Fusion API searches.
 
-// ACTIONS
+// INTENTS
 const VAGUE_SEARCH = 'vague_search';
 const DIRECT_SEARCH = 'direct_search';
 const RANDOM_SEARCH = 'random_search';
@@ -23,15 +24,15 @@ const REPEAT_RATING = "repeat_rating";
 const REPEAT_PHONE = "repeat_phone";
 
 // PARAMETERS
-var RESTAURANT_ARGUMENT = 'restaurants';
-var TERM_ARGUMENT = 'terms';
+var RESTAURANT_ARGUMENT = 'restaurants'; //Name of Parameter Accepted by VagueSearch()
+var TERM_ARGUMENT = 'terms';			//Name of Parameter Accepted by DirectSearch()
 
 //GLOBAL VARIABLES
 var COORDINATES = null;
 var LATITUDE = 'null';
 var LONGITUDE = 'null';
-var RESTAURANT = 'null';
-var TERM = 'null';
+var RESTAURANT = 'null';	//Passed by VagueSearch()
+var TERM = 'null';			//Passed by DirectSearch()
 var I = 0;
 
 //HANDLER FLAGS
@@ -39,11 +40,7 @@ var flagVagueSearch = false;
 var flagDirectSearch = false;
 var flagRandomSearch = false;
 
-//RANDOM SEARCH
-var randomSearchAlreadyCalledAPI = false;	//not yet used
-var selectedBusiness = null;
-
-//Business Logic
+//Program Logic
 exports.Capstone = functions.https.onRequest((request, response) => {
 	const app = new App({request, response});
 
@@ -156,7 +153,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	*/
 	function vague_search(app){
 		RESTAURANT = app.getArgument(RESTAURANT_ARGUMENT);
-		console.log("\n\nRESTAURANT = " + RESTAURANT);
+		console.log("RESTAURANT = " + RESTAURANT);
 		flagVagueSearch = true;
 		I = 0;
 
@@ -199,7 +196,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	
 	/*
 	* Actions Intent Permission: This function is called whenever we are asking for permission for location. 
-	* If permission is not granted, the search will not continue.
+	* If permission is not granted, the search will not continue. Overrides the built-in Permission intent.
 	* Flag variables tell us which function last asked for permission, so we know which function to return to.
 	*/
 	function actions_intent_PERMISSION(app){
@@ -207,7 +204,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 			COORDINATES = app.getDeviceLocation().coordinates;
 			LATITUDE = COORDINATES.latitude;
 			LONGITUDE = COORDINATES.longitude;
-			console.log('FOUND COORDINATES!');	//TEST
+			console.log('FOUND COORDINATES!');	//Debug Console
 
 			if(flagVagueSearch == true){
 				flagVagueSearch = false;
@@ -231,6 +228,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	
 	/*
 	* Actions Intent Confirmation: This function is called whenever we are asking a yes/no question.
+	* Overrides the built-in Confirmation intent.
 	* flag variables tell us which function last asked for permission so we know which function to
 	* return to once we get the user's yes/no answer.
 	*/
@@ -266,7 +264,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	//----------------------- LOGIC --------------------------
 
 	/*
-	* Vague Search Logic: Implements the actual logic for vague_search.
+	* Vague Search Logic: Implements the actual logic for vague_search once we have permission.
 	*/
 	function vague_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
@@ -308,7 +306,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 
 	/*
-	* Direct Search Logic: Implements the actual logic for direct_search
+	* Direct Search Logic: Implements the actual logic for direct_search once we have permission.
 	*/
 	function direct_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
@@ -346,7 +344,7 @@ exports.Capstone = functions.https.onRequest((request, response) => {
 	}
 	
 	/*
-	* Random Search Logic: Implements the actual logic for random_search
+	* Random Search Logic: Implements the actual logic for random_search once we have permission.
 	*/
 	function random_search_logic(app){
 		const clientId = 'SuUImjxWmD1bwsYVIrDknQ';
